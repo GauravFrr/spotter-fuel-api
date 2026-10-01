@@ -1,0 +1,218 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+    "name": "Spotter Fuel Routing API",
+    "description": "Postman Collection for testing Spotter Fuel Routing API endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Short Route (<500 mi) - Dallas to Houston",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=Dallas, TX&finish=Houston, TX",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            {"key": "start", "value": "Dallas, TX"},
+            {"key": "finish", "value": "Houston, TX"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains total_fuel_cost', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('total_fuel_cost');",
+              "    pm.expect(jsonData.total_fuel_cost).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Medium Route (~500 mi) - Denver to Salt Lake City",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=Denver, CO&finish=Salt Lake City, UT",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            {"key": "start", "value": "Denver, CO"},
+            {"key": "finish", "value": "Salt Lake City, UT"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains fuel_stops', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('fuel_stops');",
+              "    pm.expect(jsonData.fuel_stops).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Cross-Country Route (~2000 mi) - Chicago to LA",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=Chicago, IL&finish=Los Angeles, CA",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            {"key": "start", "value": "Chicago, IL"},
+            {"key": "finish", "value": "Los Angeles, CA"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Cross-country route has multiple fuel stops', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.fuel_stops.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. POST JSON Variant - Chicago to LA",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Los Angeles, CA\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/route/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Returns JSON route object', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.start).to.eql('Chicago, IL');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Bad Location Error Path (400 Bad Request)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=UnknownFakeCity999, CO&finish=Chicago, IL",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            {"key": "start", "value": "UnknownFakeCity999, CO"},
+            {"key": "finish", "value": "Chicago, IL"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Returns error object', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('error');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Leaflet Route Map Page (HTML)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/route/map/?start=Chicago, IL&finish=Los Angeles, CA",
+          "host": ["{{base_url}}"],
+          "path": ["api", "route", "map", ""],
+          "query": [
+            {"key": "start", "value": "Chicago, IL"},
+            {"key": "finish", "value": "Los Angeles, CA"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Returns HTML map page', function () {",
+              "    pm.response.to.have.header('Content-Type');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

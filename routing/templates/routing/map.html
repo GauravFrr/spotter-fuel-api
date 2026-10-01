@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Route Map: {{ start }} to {{ finish }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .title-group p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .metrics-grid {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            text-align: center;
+        }
+
+        .metric-card .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-card .value {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-top: 0.1rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            padding: 1.5rem 2rem;
+            gap: 1.5rem;
+        }
+
+        #map {
+            width: 100%;
+            height: 520px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        .table-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .table-section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .price-badge {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .error-banner {
+            background-color: #7f1d1d;
+            color: #fca5a5;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 2rem;
+        }
+    </style>
+</head>
+<body>
+    {% if error %}
+        <div class="error-banner">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    {% else %}
+        <header>
+            <div class="title-group">
+                <h1>{{ plan.start }} &rarr; {{ plan.finish }}</h1>
+                <p>Fuel Route Optimization • 500 mi Range @ 10 MPG</p>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Distance</div>
+                    <div class="value">{{ plan.distance_miles }} mi</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Duration</div>
+                    <div class="value">{{ plan.duration_hours }} hrs</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Total Fuel</div>
+                    <div class="value">{{ plan.total_gallons }} gal</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Total Cost</div>
+                    <div class="value" style="color: var(--success-color);">${{ plan.total_fuel_cost }}</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <div id="map"></div>
+
+            <div class="table-section">
+                <h2>Optimal Fuel Stops ({{ plan.fuel_stops|length }})</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Station Name</th>
+                            <th>Location</th>
+                            <th>Mile Marker</th>
+                            <th>Off-Route</th>
+                            <th>Price / Gal</th>
+                            <th>Fuel Bought</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if plan.initial_fill.gallons > 0 %}
+                        <tr style="background: rgba(56, 189, 248, 0.05);">
+                            <td><strong>Dep</strong></td>
+                            <td><strong>Initial Fill at Departure</strong></td>
+                            <td>{{ plan.start }}</td>
+                            <td>0.0 mi</td>
+                            <td>0.0 mi</td>
+                            <td class="price-badge">${{ plan.initial_fill.price_per_gallon }}</td>
+                            <td>{{ plan.initial_fill.gallons }} gal</td>
+                            <td><strong>${{ plan.initial_fill.cost }}</strong></td>
+                        </tr>
+                        {% endif %}
+
+                        {% for stop in plan.fuel_stops %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ stop.name }}</strong><br><small style="color:var(--text-muted);">{{ stop.address }}</small></td>
+                            <td>{{ stop.city }}, {{ stop.state }}</td>
+                            <td>{{ stop.mile_marker }} mi</td>
+                            <td>{{ stop.miles_off_route }} mi</td>
+                            <td class="price-badge">${{ stop.price_per_gallon }}</td>
+                            <td>{{ stop.gallons }} gal</td>
+                            <td><strong>${{ stop.cost }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align:center; color: var(--text-muted);">No intermediate fuel stops required for this route.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+            const planData = {{ plan_json|safe }};
+
+            const map = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            if (planData && planData.route && planData.route.geometry) {
+                const geoJsonLayer = L.geoJSON(planData.route, {
+                    style: {
+                        color: '#38bdf8',
+                        weight: 5,
+                        opacity: 0.85
+                    }
+                }).addTo(map);
+
+                map.fitBounds(geoJsonLayer.getBounds(), { padding: [40, 40] });
+
+                const coords = planData.route.geometry.coordinates;
+                if (coords.length > 0) {
+                    const startCoord = coords[0];
+                    const endCoord = coords[coords.length - 1];
+
+                    // Start marker
+                    L.marker([startCoord[1], startCoord[0]]).addTo(map)
+                        .bindPopup(`<b>Start: ${planData.start}</b>`);
+
+                    // Finish marker
+                    L.marker([endCoord[1], endCoord[0]]).addTo(map)
+                        .bindPopup(`<b>Finish: ${planData.finish}</b>`);
+                }
+
+                // Add Fuel Stop markers
+                if (planData.fuel_stops) {
+                    planData.fuel_stops.forEach((stop, idx) => {
+                        if (stop.lat && stop.lon) {
+                            const marker = L.circleMarker([stop.lat, stop.lon], {
+                                radius: 7,
+                                fillColor: '#22c55e',
+                                color: '#ffffff',
+                                weight: 2,
+                                opacity: 1,
+                                fillOpacity: 0.9
+                            }).addTo(map);
+
+                            marker.bindPopup(`
+                                <div style="font-family: Inter, sans-serif; color: #0f172a;">
+                                    <strong style="font-size: 14px;">Stop ${idx + 1}: ${stop.name}</strong><br>
+                                    <span style="color: #64748b; font-size: 12px;">${stop.address}, ${stop.city} ${stop.state}</span><br>
+                                    <hr style="margin: 6px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                                    <b>Mile Marker:</b> ${stop.mile_marker} mi<br>
+                                    <b>Price:</b> <span style="color: #16a34a; font-weight: 600;">$${stop.price_per_gallon}/gal</span><br>
+                                    <b>Gallons Bought:</b> ${stop.gallons} gal<br>
+                                    <b>Stop Cost:</b> <span style="font-weight: 700;">$${stop.cost}</span>
+                                </div>
+                            `);
+                        }
+                    });
+                }
+            }
+        </script>
+    {% endif %}
+</body>
+</html>
