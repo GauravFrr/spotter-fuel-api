@@ -1,5 +1,6 @@
+from unittest.mock import patch, MagicMock
 from django.test import TestCase
-from routing.geo import norm_city, resolve_location, resolve_state
+from routing.geo import norm_city, resolve_location, resolve_state, NOMINATIM_USER_AGENT
 
 class GeoTestCase(TestCase):
     def test_norm_city(self):
@@ -28,16 +29,40 @@ class GeoTestCase(TestCase):
         self.assertAlmostEqual(lat, 39.74)
         self.assertAlmostEqual(lon, -104.99)
 
+    @patch("routing.geo.requests.get")
+    def test_resolve_location_nominatim_fallback_success(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [{"lat": "39.7392", "lon": "-104.9903"}]
+        mock_get.return_value = mock_resp
+
+        # Use an unrecognized city string that triggers Nominatim fallback
+        lat, lon = resolve_location("UnrecognizedCustomTown99, CO")
+        self.assertAlmostEqual(lat, 39.7392, delta=0.001)
+        self.assertAlmostEqual(lon, -104.9903, delta=0.001)
+
+        # Verify requests.get was called with proper headers & params
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        self.assertEqual(kwargs["headers"]["User-Agent"], NOMINATIM_USER_AGENT)
+        self.assertEqual(kwargs["params"]["countrycodes"], "us")
+        self.assertEqual(kwargs["timeout"], 5.0)
+
+    @patch("routing.geo.requests.get")
+    def test_resolve_location_nominatim_fallback_failure(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = []
+        mock_get.return_value = mock_resp
+
+        with self.assertRaises(ValueError) as ctx:
+            resolve_location("NonExistentCity12345, CO")
+        self.assertIn("could not be resolved offline or via Nominatim fallback", str(ctx.exception))
+
     def test_resolve_location_errors(self):
         with self.assertRaises(ValueError):
             resolve_location("")
 
-        with self.assertRaises(ValueError):
-            resolve_location("NonExistentCity12345, CO")
-
         # Outside US coordinates
         with self.assertRaises(ValueError):
             resolve_location("10.0, 10.0")
-
-        with self.assertRaises(ValueError):
-            resolve_location("Invalid Location Format No Comma")

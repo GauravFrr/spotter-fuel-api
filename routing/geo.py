@@ -87,9 +87,49 @@ def get_city_db() -> dict:
     return _CITY_DB
 
 
+import requests
+
+NOMINATIM_USER_AGENT = "SpotterFuelRoutingAPI/1.0 (contact@spotter.example.com)"
+
+
+def geocode_nominatim_fallback(loc_input: str) -> tuple[float, float]:
+    """
+    Fallback online geocoder using OpenStreetMap Nominatim API.
+    Called ONLY when offline US cities lookup fails.
+    Restricted to US locations, 5-second timeout, custom User-Agent.
+    """
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": loc_input,
+        "format": "json",
+        "countrycodes": "us",
+        "limit": 1,
+    }
+    headers = {
+        "User-Agent": NOMINATIM_USER_AGENT
+    }
+
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=5.0)
+        if response.status_code == 200:
+            data = response.json()
+            if data and isinstance(data, list) and len(data) > 0:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+                if 24.0 <= lat <= 50.0 and -125.0 <= lon <= -66.0:
+                    return (lat, lon)
+    except Exception:
+        pass
+
+    raise ValueError(f"Location '{loc_input}' could not be resolved offline or via Nominatim fallback.")
+
+
 def resolve_location(loc_input: str) -> tuple[float, float]:
     """
     Resolve location string (either 'lat, lon' or 'City, State') to (latitude, longitude).
+    1. Tries offline numeric lat/lon parse.
+    2. Tries offline US cities table lookup.
+    3. Falls back to single Nominatim API call if offline lookup fails.
     Raises ValueError on invalid input or location not found.
     """
     if not loc_input or not loc_input.strip():
@@ -104,18 +144,15 @@ def resolve_location(loc_input: str) -> tuple[float, float]:
             try:
                 lat = float(parts[0].strip())
                 lon = float(parts[1].strip())
-                # Basic sanity check for continental US / North America lat/lon
                 if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
-                    # Validate within reasonable US bounding box
                     if 24.0 <= lat <= 50.0 and -125.0 <= lon <= -66.0:
                         return (lat, lon)
                     raise ValueError(f"Coordinates ({lat}, {lon}) are outside the continental US.")
             except ValueError as e:
                 if "outside the continental US" in str(e):
                     raise
-                # Not numeric floats, fall through to City, State resolution
 
-    # 2. Treat as 'City, State'
+    # 2. Treat as 'City, State' against offline database
     if "," in text:
         city_part, state_part = text.rsplit(",", 1)
         c_norm = norm_city(city_part)
@@ -126,6 +163,6 @@ def resolve_location(loc_input: str) -> tuple[float, float]:
         if coords:
             return coords
 
-        raise ValueError(f"City '{city_part.strip()}, {state_part.strip()}' could not be resolved from US cities database.")
+    # 3. Fallback: single Nominatim call for unrecognized location strings
+    return geocode_nominatim_fallback(text)
 
-    raise ValueError("Location must be in 'City, State' format (e.g. 'Chicago, IL') or 'lat, lon' coordinates.")

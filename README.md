@@ -136,7 +136,8 @@ Renders an interactive dark-themed Leaflet HTML map displaying:
 ```
 User Request (start, finish)
   │
-  ├── 1. geo.resolve_location(start/finish) ──── [Offline US Cities Table lookup]
+  ├── 1. geo.resolve_location(start/finish) ──── [1st: Offline US Cities Table lookup]
+  │                                               [2nd: Nominatim API fallback if unrecognized]
   ├── 2. cache lookup on (start, finish) ─────── [Return warm cached JSON if hit]
   ├── 3. planner.fetch_route() ───────────────── [Single HTTP GET to OSRM API]
   ├── 4. planner.stations_on_route() ─────────── [Numpy vectorised station snapping]
@@ -145,7 +146,7 @@ User Request (start, finish)
 ```
 
 ### Architectural Highlights
-- **Single Routing API Call:** Start and finish locations are geocoded completely offline against `data/us_cities.csv` (29,880 US city centroids). OSRM is called exactly once per request for the driving polyline.
+- **Strictly Bounded External Calls ($\le 3$ calls total):** Start and finish locations are geocoded offline against `data/us_cities.csv` (29,880 US city centroids). If an unrecognized location string is provided, a single OpenStreetMap Nominatim search request (`countrycodes=us`, User-Agent header, 5s timeout) is made only as a fallback. The driving route polyline is fetched via 1 single call to OSRM. Total external API calls per request are guaranteed to be $\le 3$ (and exactly 1 for standard cities).
 - **Numpy Station Snapping:** All 6,614 stations are indexed in memory. Stations are pre-filtered by bounding box and snapped to route line vertices using vectorized Euclidean distance in **~80 ms**.
 - **Greedy Min-Cost Optimizer:**
   1. At current node $i$, look ahead up to 500 miles.
