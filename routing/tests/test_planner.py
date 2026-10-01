@@ -1,7 +1,6 @@
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
-from routing.planner import plan_fuel, fetch_route, stations_on_route, build_plan
-from routing.models import Station
+from routing.planner import plan_fuel, fetch_route
 
 class PlannerTestCase(TestCase):
     def test_short_trip_single_fill(self):

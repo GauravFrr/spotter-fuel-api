@@ -79,6 +79,16 @@ class ApiTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json())
 
+    @patch("routing.geo.requests.get")
+    def test_route_api_nominatim_timeout_returns_400(self, mock_geo_get):
+        import requests
+        mock_geo_get.side_effect = requests.Timeout("Connection timed out")
+
+        response = self.client.get("/api/route/?start=UnrecognizedTownForTimeout, TX&finish=Chicago, IL")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+        self.assertIn("could not be resolved offline or via Nominatim fallback", response.json()["error"])
+
     @patch("routing.planner.requests.get")
     def test_route_api_caching(self, mock_get):
         mock_resp = MagicMock()

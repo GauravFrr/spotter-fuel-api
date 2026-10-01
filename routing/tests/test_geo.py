@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
-from routing.geo import norm_city, resolve_location, resolve_state, NOMINATIM_USER_AGENT
+from routing.geo import norm_city, resolve_location, resolve_state, get_nominatim_user_agent
 
 class GeoTestCase(TestCase):
     def test_norm_city(self):
@@ -44,7 +44,7 @@ class GeoTestCase(TestCase):
         # Verify requests.get was called with proper headers & params
         mock_get.assert_called_once()
         _, kwargs = mock_get.call_args
-        self.assertEqual(kwargs["headers"]["User-Agent"], NOMINATIM_USER_AGENT)
+        self.assertEqual(kwargs["headers"]["User-Agent"], get_nominatim_user_agent())
         self.assertEqual(kwargs["params"]["countrycodes"], "us")
         self.assertEqual(kwargs["timeout"], 5.0)
 

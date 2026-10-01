@@ -1,5 +1,4 @@
 import math
-import time
 import requests
 import numpy as np
 from typing import List, Dict, Any, Tuple
@@ -202,6 +201,23 @@ def plan_fuel(
         raise ValueError("Range and MPG must be positive numbers.")
 
     sorted_nodes = sorted(nodes, key=lambda x: x["mile_marker"])
+
+    # If trip is within vehicle range, initial fill at departure covers full trip
+    if total_mi <= range_mi:
+        init_price = sorted_nodes[0]["price"]
+        init_gallons = total_mi / mpg
+        init_cost = init_gallons * init_price
+        return {
+            "initial_fill": {
+                "gallons": round(init_gallons, 2),
+                "price_per_gallon": round(init_price, 3),
+                "cost": round(init_cost, 2),
+                "note": "Initial fill at departure point (covers full trip <= 500 miles)",
+            },
+            "fuel_stops": [],
+            "total_gallons": round(init_gallons, 2),
+            "total_fuel_cost": round(init_cost, 2),
+        }
 
     curr_m = 0.0
     for node in sorted_nodes:

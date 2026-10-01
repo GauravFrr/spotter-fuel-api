@@ -1,13 +1,12 @@
 import json
-from django.http import JsonResponse, HttpResponse
+import re
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from django.conf import settings
 from routing.planner import build_plan
 
-
-import re
 
 def get_cache_key(start: str, finish: str) -> str:
     """Generate a normalised, memcached-safe cache key for start and finish location string pair."""

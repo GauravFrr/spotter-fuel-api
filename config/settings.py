@@ -133,9 +133,11 @@ CACHES = {
 
 # Routing & Fuel settings
 OSRM_URL = os.getenv("OSRM_URL", "https://router.project-osrm.org")
+NOMINATIM_USER_AGENT = os.getenv("NOMINATIM_USER_AGENT", "SpotterFuelRoutingAPI/1.0 (https://github.com/GauravFrr/spotter-fuel-api)")
 VEHICLE_RANGE_MI = float(os.getenv("VEHICLE_RANGE_MI", "500.0"))
 VEHICLE_MPG = float(os.getenv("VEHICLE_MPG", "10.0"))
 MAX_STATION_OFFSET_MI = float(os.getenv("MAX_STATION_OFFSET_MI", "10.0"))
 ROUTING_TIMEOUT_S = float(os.getenv("ROUTING_TIMEOUT_S", "15.0"))
 RESULT_CACHE_TTL_S = int(os.getenv("RESULT_CACHE_TTL_S", "3600"))
+
 

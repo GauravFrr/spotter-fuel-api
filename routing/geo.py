@@ -1,5 +1,6 @@
 import csv
 import re
+import requests
 from pathlib import Path
 from django.conf import settings
 
@@ -87,9 +88,12 @@ def get_city_db() -> dict:
     return _CITY_DB
 
 
-import requests
+DEFAULT_NOMINATIM_USER_AGENT = "SpotterFuelRoutingAPI/1.0 (https://github.com/GauravFrr/spotter-fuel-api)"
 
-NOMINATIM_USER_AGENT = "SpotterFuelRoutingAPI/1.0 (contact@spotter.example.com)"
+
+def get_nominatim_user_agent() -> str:
+    """Retrieve Nominatim User-Agent from settings or fallback default."""
+    return getattr(settings, "NOMINATIM_USER_AGENT", DEFAULT_NOMINATIM_USER_AGENT)
 
 
 def geocode_nominatim_fallback(loc_input: str) -> tuple[float, float]:
@@ -106,7 +110,7 @@ def geocode_nominatim_fallback(loc_input: str) -> tuple[float, float]:
         "limit": 1,
     }
     headers = {
-        "User-Agent": NOMINATIM_USER_AGENT
+        "User-Agent": get_nominatim_user_agent()
     }
 
     try:

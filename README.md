@@ -102,6 +102,15 @@ Default configuration is automatically loaded from `.env` or settings defaults:
 | `ROUTING_TIMEOUT_S` | `15.0` | OSRM HTTP request timeout (seconds) |
 | `RESULT_CACHE_TTL_S` | `3600` | Local memory cache TTL for route responses (seconds) |
 
+### Input Formats (`start` & `finish`)
+The API resolves locations flexibly across 4 supported formats:
+1. **City, Postal Code:** e.g., `"Chicago, IL"` (Offline, ~0 ms)
+2. **City, Full State Name:** e.g., `"Chicago, Illinois"` or `"Denver, Colorado"` (Offline, ~0 ms)
+3. **Coordinates:** e.g., `"39.7392, -104.9903"` (Offline, ~0 ms)
+4. **Free-text Address:** e.g., `"1600 Pennsylvania Ave, Washington DC"` (Online Nominatim Fallback, 1 call)
+
+> **Note on Routing Service:** The default routing endpoint uses the public OSRM demo server (`https://router.project-osrm.org`). If the public server is throttled or down, `OSRM_URL` can be overridden in `.env` (e.g. `OSRM_URL=http://localhost:5000` or an alternative hosted OSRM instance).
+
 ---
 
 ## API Reference
@@ -118,7 +127,7 @@ Computes optimal route geometry, fuel stops, and total cost.
 
 - **Status Codes:**
   - `200 OK`: Success.
-  - `400 Bad Request`: Missing parameters, invalid JSON, or unresolvable city/state string.
+  - `400 Bad Request`: Missing parameters, invalid JSON, or unresolvable location string.
   - `422 Unprocessable Entity`: No reachable fuel station within 500 miles, or OSRM routing service error.
 
 ### 2. Leaflet Map Page: `GET /api/route/map/`
