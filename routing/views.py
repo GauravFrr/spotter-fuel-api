@@ -82,7 +82,7 @@ def route_map_view(request):
         return render(
             request,
             "routing/map.html",
-            {"error": "Please specify both 'start' and 'finish' query parameters in the URL."},
+            {"landing": True, "start": start, "finish": finish},
         )
 
     cache_key = get_cache_key(start, finish)

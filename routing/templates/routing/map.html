@@ -151,14 +151,158 @@
             color: #fca5a5;
             padding: 1rem;
             border-radius: 8px;
-            margin: 1rem 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .landing-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            padding: 2rem;
+        }
+
+        .landing-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .landing-card h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .landing-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .route-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group input {
+            background-color: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .submit-btn {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .sample-routes {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sample-routes span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .sample-routes a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .sample-routes a:hover {
+            color: var(--text-main);
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    {% if error %}
-        <div class="error-banner">
-            <strong>Error:</strong> {{ error }}
+    {% if landing or error %}
+        <div class="landing-container">
+            <div class="landing-card">
+                <h1>Spotter Fuel Route Planner</h1>
+                <p>Calculate optimal driving routes across the USA with cost-effective refuel stops (500 mi range @ 10 MPG).</p>
+
+                {% if error %}
+                    <div class="error-banner">
+                        <strong>Error:</strong> {{ error }}
+                    </div>
+                {% endif %}
+
+                <form action="/api/route/map/" method="GET" class="route-form">
+                    <div class="form-group">
+                        <label for="start">Start Location</label>
+                        <input type="text" id="start" name="start" value="{{ start }}" placeholder="e.g. Chicago, IL" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="finish">Finish Location</label>
+                        <input type="text" id="finish" name="finish" value="{{ finish }}" placeholder="e.g. Los Angeles, CA" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Calculate Route Map &rarr;</button>
+                </form>
+
+                <div class="sample-routes">
+                    <span>Try Sample Routes:</span>
+                    <a href="/api/route/map/?start=Chicago,%20IL&finish=Los%20Angeles,%20CA">Chicago, IL &rarr; Los Angeles, CA (Cross-Country)</a>
+                    <a href="/api/route/map/?start=Dallas,%20TX&finish=Houston,%20TX">Dallas, TX &rarr; Houston, TX (Short Route)</a>
+                    <a href="/api/route/map/?start=Denver,%20CO&finish=Salt%20Lake%20City,%20UT">Denver, CO &rarr; Salt Lake City, UT (Medium Route)</a>
+                </div>
+            </div>
         </div>
     {% else %}
         <header>

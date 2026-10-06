@@ -131,6 +131,13 @@ class ApiTestCase(TestCase):
         self.assertContains(response, "Fuel Route Map")
         self.assertContains(response, "leaflet.css")
 
+    def test_route_map_view_landing(self):
+        response = self.client.get("/api/route/map/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Spotter Fuel Route Planner")
+        self.assertContains(response, "Calculate Route Map")
+
+
     @unittest.skipUnless(os.environ.get("LIVE_TEST"), "Live test skipped by default")
     def test_live_route(self):
         response = self.client.get("/api/route/?start=Chicago, IL&finish=Los Angeles, CA")

@@ -1,7 +1,13 @@
 # Use this workspace to collaborate
 workspace:
-  id: 7c78913a-bf38-430c-a511-95afcd7be44b
+  id: ""
 
 localResources:
   documents:
     - ../README.md
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Spotter Fuel Routing API: 9dc5f0a6-09b7-453f-b90f-0114d9a36045

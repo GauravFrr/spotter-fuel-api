@@ -1,0 +1,20 @@
+$kind: http-request
+name: 1. Short Route (<500 mi) - Dallas to Houston
+url: "{{base_url}}/api/route/?start=Dallas, TX&finish=Houston, TX"
+method: GET
+queryParams:
+  start: Dallas, TX
+  finish: Houston, TX
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test('Response contains total_fuel_cost', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('total_fuel_cost');
+          pm.expect(jsonData.total_fuel_cost).to.be.a('number');
+      });
+    language: text/javascript
+order: 1000

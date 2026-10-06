@@ -1,0 +1,4 @@
+$kind: collection
+description: Postman Collection for testing Spotter Fuel Routing API endpoints.
+variables:
+  base_url: http://127.0.0.1:8000

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{base_url}}/api/route/"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "start": "Chicago, IL",
+      "finish": "Los Angeles, CA"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test('Returns JSON route object', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.start).to.eql('Chicago, IL');
+      });
+    language: text/javascript
+order: 4000

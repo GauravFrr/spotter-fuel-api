@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/api/route/?start=UnknownFakeCity999, CO&finish=Chicago, IL"
+method: GET
+queryParams:
+  start: UnknownFakeCity999, CO
+  finish: Chicago, IL
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+      pm.test('Returns error object', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('error');
+      });
+    language: text/javascript
+order: 5000
