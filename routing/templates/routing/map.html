@@ -239,9 +239,13 @@
             </div>
         </div>
 
+        <script id="plan-data" type="application/json">
+            {{ plan_json|safe }}
+        </script>
+
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-            const planData = {{ plan_json|safe }};
+            const planData = JSON.parse(document.getElementById('plan-data').textContent || '{}');
 
             const map = L.map('map');
 
